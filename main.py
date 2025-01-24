@@ -1,20 +1,29 @@
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPalette
-from PyQt5.QtWidgets import *
+from PyQt6.QtCore import *
+from PyQt6.QtGui import *
+from PyQt6.QtWidgets import *
+import sys
 
-app = QApplication([])
+app = QApplication(sys.argv)
 app.setStyle('Fusion')
-palette = QPalette()
-palette.setColor(QPalette.ButtonText, Qt.red)
-app.setPalette(palette)
+
 window = QWidget()
 layout = QVBoxLayout()
-app.setStyleSheet("QPushButton { margin: 5ex; } QLabel { margin: 5ex; }")
+app.setStyleSheet("QLabel { margin: 1ex; }")
 
-layout.addWidget(QProgressBar())
-layout.addWidget(QLabel('Label'))
-layout.addWidget(QPushButton('Button'))
+button = QPushButton('Button')
+label = QLabel('Label')
+progressBar = QProgressBar()    
+
+def on_btn_clicked():
+    alert = QMessageBox()
+    alert.setText('You have been hacked!')
+    alert.exec()
+button.clicked.connect(on_btn_clicked)
+
+layout.addWidget(button)
+layout.addWidget(label)
+layout.addWidget(progressBar)
+
 window.setLayout(layout)
-
 window.show()
-app.exec_()
+app.exec()
