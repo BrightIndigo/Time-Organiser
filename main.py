@@ -2,6 +2,8 @@ from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from PyQt6.QtWidgets import *
 import sys
+import datetime
+
 
 def mainWindow():
     screen_width, screen_height = 800, 600
@@ -60,11 +62,17 @@ def mainWindow():
                 alert.setText('You have been hacked again!')
                 alert.exec()
             planButton.clicked.connect(planMode)
+            
+            
+            #Calendar
             def viewCalendar():
                 for i in reversed(range(layout.count())):
                     layout.itemAt(i).widget().setParent(None)
                 calendar = QCalendarWidget()
                 calendar.setGridVisible(True)
+                calendar.clicked[QDate].connect(ShowDate)
+                date = calendar.selectedDate()
+                label = QLabel()
                 exitBtn = QPushButton("Exit")
                 
                 def exit():
@@ -73,12 +81,17 @@ def mainWindow():
                     addDefaultWidgets()
                 exitBtn.clicked.connect(exit)
                 
+                #set viewCalendar widgets
+                layout.addWidget(label)
                 layout.addWidget(exitBtn)
                 layout.addWidget(calendar)
                 
             viewButton.clicked.connect(viewCalendar)
             
-            #add to layout
+            def ShowDate(self, date):
+                self.label.setText(date.toString())
+                
+            #add to default layout 
             def addDefaultWidgets():
                 layout.addWidget(toolbar)
                 layout.addWidget(workButton)
