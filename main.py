@@ -1,9 +1,11 @@
-from PyQt6.QtCore import *
-from PyQt6.QtGui import *
-from PyQt6.QtWidgets import *
 import sys
-import datetime
-
+from PyQt6.QtCore import QTimer, Qt, QDate, QTime
+from PyQt6.QtGui import QAction, QIcon
+from PyQt6.QtWidgets import (
+    QApplication, QMainWindow, QVBoxLayout, QWidget, 
+    QToolBar, QStatusBar, QLabel, QPushButton, 
+    QProgressBar, QFrame, QMessageBox, QCalendarWidget
+)
 
 def mainWindow():
     screen_width, screen_height = 800, 600
@@ -15,19 +17,30 @@ def mainWindow():
         screen_height = screenGeometry.height()
     app.setStyle('Fusion')
     app.setStyleSheet("QLabel { margin: 1ex; }")
+
     class MainWindow(QMainWindow):
         def __init__(self):
             super().__init__()
             self.setWindowTitle("Task manager app")
             self.resize(screen_width, screen_height)
-            
-            
-            #main widget
-            mainWidget = QWidget()
-            self.setCentralWidget(mainWidget)
-            layout = QVBoxLayout(mainWidget)
-            
-            #widgets
+
+            # Tworzenie głównego widgetu i layoutu
+            self.central_widget = QWidget(self)
+            self.setCentralWidget(self.central_widget)
+            self.layout = QVBoxLayout(self.central_widget)
+
+            # Tworzenie etykiety jako poruszający się element
+            self.label = QLabel("🕒", self.central_widget)
+            self.label.resize(40, 40)
+
+            # Timer do aktualizacji pozycji co 100 ms
+            self.timer = QTimer(self)
+            self.timer.timeout.connect(self.update_position)
+            self.timer.start(100)
+
+            self.update_position()  # Ustawienie początkowej pozycji
+
+            # Toolbar
             toolbar = QToolBar("Toolbar", self)
             toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
             action1 = QAction(QIcon(), "Action1", self)
@@ -36,84 +49,105 @@ def mainWindow():
             action2.triggered.connect(self.action2_triggered)
             toolbar.addAction(action1)
             toolbar.addAction(action2)
-            statusBar = QStatusBar(self)
-            label8 = QLabel('8:00')
-            label16 = QLabel('16:00')
-            label00 = QLabel('00:00')
-            progressBar = QProgressBar()    
-            workButton = QPushButton('work mode')
-            planButton = QPushButton('plan mode')
-            viewButton = QPushButton('view your progress')
+
+            # Status bar i przyciski
+            self.statusBar = QStatusBar(self)
+            self.setStatusBar(self.statusBar)
+
+            self.workButton = QPushButton('work mode')
+            self.planButton = QPushButton('plan mode')
+            self.viewButton = QPushButton('view your progress')
+
+            # Separatory
             hSeparator = QFrame()
             hSeparator.setFrameShape(QFrame.Shape.HLine)
             hSeparator.setFrameShadow(QFrame.Shadow.Sunken)
+
             hSeparator2 = QFrame()
             hSeparator2.setFrameShape(QFrame.Shape.HLine)
             hSeparator2.setFrameShadow(QFrame.Shadow.Sunken)
-            
-            #actions
-            def workMode():
-                alert = QMessageBox()
-                alert.setText('You have been hacked!')
-                alert.exec()
-            workButton.clicked.connect(workMode)
-            def planMode():
-                alert = QMessageBox()
-                alert.setText('You have been hacked again!')
-                alert.exec()
-            planButton.clicked.connect(planMode)
-            
-            
-            #Calendar
-            def viewCalendar():
-                for i in reversed(range(layout.count())):
-                    layout.itemAt(i).widget().setParent(None)
-                calendar = QCalendarWidget()
-                calendar.setGridVisible(True)
-                calendar.clicked[QDate].connect(ShowDate)
-                date = calendar.selectedDate()
-                label = QLabel()
-                exitBtn = QPushButton("Exit")
-                
-                def exit():
-                    for i in reversed(range(layout.count())):
-                        layout.itemAt(i).widget().setParent(None)
-                    addDefaultWidgets()
-                exitBtn.clicked.connect(exit)
-                
-                #set viewCalendar widgets
-                layout.addWidget(label)
-                layout.addWidget(exitBtn)
-                layout.addWidget(calendar)
-                
-            viewButton.clicked.connect(viewCalendar)
-            
-            def ShowDate(self, date):
-                self.label.setText(date.toString())
-                
-            #add to default layout 
-            def addDefaultWidgets():
-                layout.addWidget(toolbar)
-                layout.addWidget(workButton)
-                layout.addWidget(planButton)
-                layout.addWidget(viewButton)
-                layout.addWidget(hSeparator)
-                layout.addWidget(label8)
-                layout.addWidget(label16)
-                layout.addWidget(label00)
-                layout.addWidget(hSeparator2)
-                #layout.addWidget(progressBar)
-            addDefaultWidgets()
-            
+
+            # Akcje dla przycisków
+            self.workButton.clicked.connect(self.workMode)
+            self.planButton.clicked.connect(self.planMode)
+            self.viewButton.clicked.connect(self.viewCalendar)
+
+            # Dodanie widgetów do layoutu
+            self.layout.addWidget(toolbar)
+            self.layout.addWidget(self.workButton)
+            self.layout.addWidget(self.planButton)
+            self.layout.addWidget(self.viewButton)
+            self.layout.addWidget(hSeparator)
+            self.layout.addWidget(hSeparator2)
+
+        def update_position(self):
+            """Aktualizuje pozycję elementu na podstawie aktualnego czasu."""
+            current_time = QTime.currentTime()
+            seconds = current_time.second()
+            milliseconds = current_time.msec()
+
+            # Przesuwanie elementu w zakresie 0-300 px w poziomie
+            x_pos = (seconds * 5) % 300  # Sekundy wpływają na pozycję X
+            y_pos = (milliseconds // 10) % 250  # Milisekundy wpływają na pozycję Y
+
+            self.label.move(x_pos, y_pos)
+
+        def workMode(self):
+            alert = QMessageBox()
+            alert.setText('You have been hacked!')
+            alert.exec()
+
+        def planMode(self):
+            alert = QMessageBox()
+            alert.setText('You have been hacked again!')
+            alert.exec()
+
+        def viewCalendar(self):
+            """Przełącza widok na kalendarz."""
+            # Czyści obecny layout
+            for i in reversed(range(self.layout.count())):
+                widget = self.layout.itemAt(i).widget()
+                if widget is not None:
+                    widget.setParent(None)
+
+            # Tworzy nowy kalendarz
+            self.calendar = QCalendarWidget()
+            self.calendar.setGridVisible(True)
+            self.calendar.clicked[QDate].connect(self.showDate)
+
+            self.label = QLabel()
+            self.exitBtn = QPushButton("Exit")
+            self.exitBtn.clicked.connect(self.addDefaultWidgets)
+
+            # Dodaje nowe widgety
+            self.layout.addWidget(self.label)
+            self.layout.addWidget(self.exitBtn)
+            self.layout.addWidget(self.calendar)
+
+        def showDate(self, date):
+            self.label.setText(date.toString())
+
+        def addDefaultWidgets(self):
+            """Przywraca oryginalne widgety po zamknięciu kalendarza."""
+            for i in reversed(range(self.layout.count())):
+                widget = self.layout.itemAt(i).widget()
+                if widget is not None:
+                    widget.setParent(None)
+
+            self.layout.addWidget(self.workButton)
+            self.layout.addWidget(self.planButton)
+            self.layout.addWidget(self.viewButton)
+
         def action1_triggered(self):
             alert = QMessageBox()
             alert.setText('You have been hacked1!')
             alert.exec()
+
         def action2_triggered(self):
             alert = QMessageBox()
             alert.setText('You have been hacked2!')
             alert.exec()
-        
+
     window = MainWindow()
     window.show()
     app.exec()
